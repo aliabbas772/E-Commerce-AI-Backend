@@ -14,7 +14,7 @@ import { Notification } from "../models/Notification.model";
 export const createIndexes = async (): Promise<void> => {
   // User
   await User.collection.createIndex({ email: 1 }, { unique: true });
-  await User.collection.createIndex({ phone: 1 }, { sparse: true });
+  await User.collection.createIndex({ phone: 1 }, { unique: true, sparse: true });
 
   // Product
   await Product.collection.createIndex({ category: 1 });
@@ -22,11 +22,11 @@ export const createIndexes = async (): Promise<void> => {
   await Product.collection.createIndex({ category: 1, price: 1 });
   await Product.collection.createIndex({ isActive: 1 });
   await Product.collection.createIndex({ averageRating: -1 });
-  await Product.collection.createIndex({
-    name: "text",
-    description: "text",
-    tags: "text",
-  });
+  // await Product.collection.createIndex({
+  //   name: "text",
+  //   description: "text",
+  //   tags: "text",
+  // });
 
   // Order
   await Order.collection.createIndex({ user: 1 });

@@ -25,9 +25,7 @@ import { logger } from "../utils/logger.utils";
 import { verifyCaptcha } from "../utils/captcha.utils";
 import { Request, Response } from "express";
 
-// ─── Token helpers ────────────────────────────────────────────────
-
-const REFRESH_TTL = 604800; // 7 days in seconds
+const REFRESH_TTL = 604800; 
 
 const setRefreshCookie = (res: Response, token: string) => {
   res.cookie("refreshToken", token, {
@@ -41,8 +39,6 @@ const setRefreshCookie = (res: Response, token: string) => {
 const storeRefreshToken = async (userId: string, token: string) => {
   await redis.setex(`refresh:${userId}`, REFRESH_TTL, token);
 };
-
-// ─── Rate limiting helper ─────────────────────────────────────────
 
 const checkRateLimit = async (
   key: string,
@@ -59,8 +55,6 @@ const checkRateLimit = async (
   }
 };
 
-// ─── Register ─────────────────────────────────────────────────────
-
 export const sendRegisterOTPService = async (args: {
   name: string;
   email: string;
@@ -68,7 +62,6 @@ export const sendRegisterOTPService = async (args: {
   phone?: string;
   captchaToken: string;
 }) => {
-  // Captcha check
   const captchaValid = await verifyCaptcha(args.captchaToken);
   if (!captchaValid && process.env.NODE_ENV === "production") {
     throw new GraphQLError("Captcha verification failed", {
@@ -76,15 +69,19 @@ export const sendRegisterOTPService = async (args: {
     });
   }
 
-  // Validate input
-  registerSchema.parse({
+  const validation = registerSchema.safeParse({
     name: args.name,
     email: args.email,
     password: args.password,
     phone: args.phone,
   });
 
-  // Check duplicate
+  if (!validation.success) {
+    throw new GraphQLError(validation.error.issues[0].message, {
+      extensions: { code: "BAD_USER_INPUT" },
+    });
+  }
+
   const existing = await User.findOne({ email: args.email });
   if (existing) {
     throw new GraphQLError("Email already in use", {
@@ -92,7 +89,6 @@ export const sendRegisterOTPService = async (args: {
     });
   }
 
-  // Rate limit — max 5 OTP requests per 15 min per email
   await checkRateLimit(
     `registerAttempts:${args.email}`,
     5,
@@ -100,8 +96,6 @@ export const sendRegisterOTPService = async (args: {
     "Too many OTP requests. Try again in 15 minutes.",
   );
 
-  // Store user details temporarily in Redis (TTL 10 min)
-  // Why: Don't create user until OTP verified
   await redis.setex(
     `register:${args.email}`,
     600,
@@ -114,7 +108,7 @@ export const sendRegisterOTPService = async (args: {
   );
 
   const otp = generateOTP();
-  logger.info(`Register OTP for ${args.email}: ${otp}`); // remove in production
+  logger.info(`Register OTP for ${args.email}: ${otp}`); 
   await saveOTPToRedis(args.email, otp);
   await sendOTPtoEmail(args.email, otp);
 

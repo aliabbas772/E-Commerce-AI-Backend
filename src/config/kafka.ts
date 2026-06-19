@@ -12,6 +12,7 @@ export const consumer = kafka.consumer({ groupId: "ecommerce-group" });
 export const connectKafka = async (): Promise<void> => {
   await producer.connect();
   logger.info("✅ Kafka producer connected");
+  logger.info(`Kafka broker: ${process.env.KAFKA_BROKER}`);
 };
 
 export default kafka;

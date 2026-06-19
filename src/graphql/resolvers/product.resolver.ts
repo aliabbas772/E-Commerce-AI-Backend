@@ -3,7 +3,7 @@ import { Context } from "../../types/context.types";
 import {
   getProductsService,
   getProductByIdService,
-  searchProductsService,
+  // searchProductsService,
   createProductService,
   updateProductService,
   deleteProductService,
@@ -27,7 +27,7 @@ const productResolvers = {
     getProducts: (_: unknown, args: any) => getProductsService(args),
     getProductById: (_: unknown, args: { id: string }) =>
       getProductByIdService(args.id),
-    searchProducts: (_: unknown, args: any) => searchProductsService(args),
+    // searchProducts: (_: unknown, args: any) => searchProductsService(args),
   },
   Mutation: {
     createProduct: async (

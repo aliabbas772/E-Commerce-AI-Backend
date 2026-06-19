@@ -78,7 +78,7 @@ export const sendOTPEmail = async (
   await transporter.sendMail({
     from: `"EcommerceAI" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: "Your OTP Code",
+    subject: "Aliy's",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 400px; margin: auto;">
         <h2>Your OTP Code</h2>

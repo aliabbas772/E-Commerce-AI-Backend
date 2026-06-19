@@ -71,7 +71,6 @@ const productTypeDefs = gql`
       limit: Int
     ): PaginatedProducts!
     getProductById(id: ID!): Product!
-    searchProducts(query: String!, page: Int, limit: Int): PaginatedProducts!
   }
 
   type Mutation {

@@ -37,6 +37,7 @@ const categoryResolvers = {
     ) => {
       requireAdmin(context);
       const category = await createCategory(args.input);
+      await category.populate("parentCategory");
       await logAdminAction(
         context.user!._id.toString(),
         "CREATE",

@@ -81,27 +81,27 @@ export const getProductByIdService = async (id: string) => {
   return product;
 };
 
-export const searchProductsService = async (args: {
-  query: string;
-  page?: number;
-  limit?: number;
-}) => {
-  const { page, limit, skip } = getPaginationParams(args);
+// export const searchProductsService = async (args: {
+//   query: string;
+//   page?: number;
+//   limit?: number;
+// }) => {
+//   const { page, limit, skip } = getPaginationParams(args);
 
-  const [data, totalCount] = await Promise.all([
-    Product.find(
-      { $text: { $search: args.query }, isActive: true },
-      { score: { $meta: "textScore" } },
-    )
-      .populate("category")
-      .sort({ score: { $meta: "textScore" } })
-      .skip(skip)
-      .limit(limit),
-    Product.countDocuments({ $text: { $search: args.query }, isActive: true }),
-  ]);
+//   const [data, totalCount] = await Promise.all([
+//     Product.find(
+//       { $text: { $search: args.query }, isActive: true },
+//       { score: { $meta: "textScore" } },
+//     )
+//       .populate("category")
+//       .sort({ score: { $meta: "textScore" } })
+//       .skip(skip)
+//       .limit(limit),
+//     Product.countDocuments({ $text: { $search: args.query }, isActive: true }),
+//   ]);
 
-  return buildPaginatedResult(data, totalCount, page, limit);
-};
+//   return buildPaginatedResult(data, totalCount, page, limit);
+// };
 
 export const createProductService = async (input: any) => {
   createProductSchema.parse(input);
