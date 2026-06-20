@@ -50,7 +50,6 @@ const AddressSchema = new Schema<IAddress>(
       type: String,
       required: [true, "Pincode is required"],
       match: [/^\d{6}$/, "Invalid pincode"],
-      // Why regex: Indian pincodes are exactly 6 digits
     },
     country: {
       type: String,
@@ -59,7 +58,6 @@ const AddressSchema = new Schema<IAddress>(
     isDefault: {
       type: Boolean,
       default: false,
-      // Why: one address is pre-selected at checkout
     },
     label: {
       type: String,

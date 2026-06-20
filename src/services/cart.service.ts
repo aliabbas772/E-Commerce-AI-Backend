@@ -42,6 +42,8 @@ export const addToCart = async (
     (item) => item.product.toString() === productId && item.size === size,
   );
 
+  // console.log(quantity);
+
   if (existingItem) {
     const newQty = existingItem.quantity + quantity;
     if (newQty > 10) {
@@ -118,6 +120,7 @@ export const removeFromCart = async (
 };
 
 export const clearCart = async (userId: string) => {
-  Cart.findOneAndUpdate({ user: userId }, { items: [], totalAmount: 0 });
+  await Cart.findOneAndUpdate({ user: userId }, { items: [], totalAmount: 0 });
+  
   return { message: "Cart cleared" };
 };

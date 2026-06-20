@@ -36,7 +36,7 @@ const cartResolvers = {
       context: Context,
     ) => {
       requireAuth(context);
-      addToCart(
+      return addToCart(
         context.user!._id.toString(),
         args.productId,
         args.quantity,
