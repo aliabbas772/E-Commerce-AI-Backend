@@ -123,7 +123,6 @@ export const setDefaultAddressService = async (id: string, userId: string) => {
     });
   }
 
-  // Remove default from all other addresses first
   await Address.updateMany(
     { user: userId, _id: { $ne: id } },
     { isDefault: false },

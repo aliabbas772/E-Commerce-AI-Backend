@@ -3,7 +3,6 @@ import { Admin, AdminPermission } from "../models/Admin.model";
 import { User } from "../models/User.model";
 import { getPaginationParams } from "../utils/pagination.utils";
 
-// Check if admin has a specific permission
 export const checkPermission = async (
   userId: string,
   permission: AdminPermission,
@@ -21,7 +20,6 @@ export const checkPermission = async (
   }
 };
 
-// Log admin action — called after every admin mutation
 export const logAdminAction = async (
   userId: string,
   action: string,

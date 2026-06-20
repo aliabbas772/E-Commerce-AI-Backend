@@ -46,7 +46,7 @@ export const getProductsService = async (args: {
     if (args.filters.minPrice) query.price.$gte = args.filters.minPrice;
     if (args.filters.maxPrice) query.price.$lte = args.filters.maxPrice;
   }
-  // Allow admin to see inactive products
+
   if (args.filters?.isActive !== undefined) {
     query.isActive = args.filters.isActive;
   }
