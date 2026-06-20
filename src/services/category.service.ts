@@ -12,6 +12,7 @@ const clearCategoryCache = async () => {
 
 export const getCategories = async () => {
   const cached = await redis.get(CACHE_KEY);
+  // console.log(JSON.parse(cached!))
   if (cached) return JSON.parse(cached);
 
   const categories = await Category.find({ isActive: true })
@@ -19,12 +20,16 @@ export const getCategories = async () => {
     .sort({ name: 1 });
 
   await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(categories));
+  // console.log(JSON.stringify(categories));
   return categories;
 };
 
 export const getCategoryById = async (categoryId: string) => {
-  const cached = await redis.get(CACHE_KEY);
-  if (cached) return JSON.stringify(cached);
+  if (!categoryId) {
+    throw new GraphQLError("Category ID is required", {
+      extensions: { code: "NOT_FOUND" },
+    });
+  }
 
   const category =
     await Category.findById(categoryId).populate("parentCategory");
@@ -34,24 +39,22 @@ export const getCategoryById = async (categoryId: string) => {
       extensions: { code: "NOT_FOUND" },
     });
   }
-
-  await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(category));
   return category;
 };
 
 export const getCategoryBySlug = async (slug: string) => {
-  const cached = await redis.get(CACHE_KEY);
-  if (cached) return JSON.stringify(cached);
+  // const cached = await redis.get(CACHE_KEY);
+  // if (cached) return JSON.stringify(cached);
 
-  const category = await Category.findById({ slug }).populate("parentCategory");
+  const category = await Category.findOne({ slug }).populate("parentCategory");
 
   if (!category) {
     throw new GraphQLError("Category not found", {
       extensions: { code: "NOT_FOUND" },
     });
   }
-
-  await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(category));
+  //
+  // await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(category));
   return category;
 };
 
@@ -86,9 +89,10 @@ export const updateCategory = async (
 ) => {
   const category = await Category.findByIdAndUpdate(
     id,
-    { $set: { input } },
+    input,
     { new: true, runValidators: true },
   ).populate("parentCategory");
+  console.log(category);
 
   if (!category) {
     throw new GraphQLError("Category not found", {

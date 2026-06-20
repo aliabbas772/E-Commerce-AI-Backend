@@ -6,8 +6,6 @@ import {
 } from "../utils/pagination.utils";
 import { logger } from "../utils/logger.utils";
 
-// Index a single product into Elasticsearch
-// Called when product is created or updated
 export const indexProduct = async (productId: string): Promise<void> => {
   try {
     const product = await Product.findById(productId).populate("category");
@@ -29,12 +27,10 @@ export const indexProduct = async (productId: string): Promise<void> => {
       },
     });
   } catch (error) {
-    // Log but don't crash — search index failure is non-critical
     logger.error(`Failed to index product ${productId}: ${error}`);
   }
 };
 
-// Remove product from index — called on soft delete
 export const removeProductFromIndex = async (
   productId: string,
 ): Promise<void> => {
@@ -45,7 +41,6 @@ export const removeProductFromIndex = async (
   }
 };
 
-// Sync all products to Elasticsearch — run once on startup
 export const syncAllProductsToES = async (): Promise<void> => {
   try {
     const products = await Product.find({ isActive: true }).populate(
@@ -53,7 +48,6 @@ export const syncAllProductsToES = async (): Promise<void> => {
     );
     logger.info(`Syncing ${products.length} products to Elasticsearch...`);
 
-    // Bulk index — much faster than individual indexing
     if (products.length === 0) return;
 
     const operations = products.flatMap((product) => [
@@ -201,7 +195,6 @@ const fallbackSearch = async (query: string, page: number, limit: number) => {
   return buildPaginatedResult(data, totalCount, page, limit);
 };
 
-// Autocomplete suggestions
 export const getSearchSuggestionsService = async (
   query: string,
 ): Promise<string[]> => {
@@ -212,9 +205,11 @@ export const getSearchSuggestionsService = async (
         product_suggest: {
           prefix: query,
           completion: {
-            field: "name",
+            field: "name.suggest",
             size: 5,
-            fuzzy: { fuzziness: 1 },
+            fuzzy: {
+              fuzziness: 1,
+            },
           },
         },
       },

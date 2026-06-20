@@ -47,8 +47,12 @@ const createProductIndex = async (): Promise<void> => {
           name: {
             type: "text",
             analyzer: "product_analyzer",
-            // copy_to allows searching name + description together
             copy_to: "search_all",
+            fields: {
+              suggest: {
+                type: "completion",
+              },
+            },
           },
           description: {
             type: "text",
