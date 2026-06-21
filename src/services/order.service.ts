@@ -102,7 +102,6 @@ export const createOrderService = async (
   },
 ) => {
   return withLock(`order:user:${userId}`, async () => {
-    // Validate address belongs to user
     const address = await Address.findById(args.addressId);
     if (!address) {
       throw new GraphQLError("Address not found", {
@@ -148,14 +147,12 @@ export const createOrderService = async (
       });
     }
 
-    // Create Razorpay order
     const razorpayOrder = await razorpay.orders.create({
       amount: totalAmount * 100,
       currency: "INR",
       receipt: `rcpt_${Date.now()}`,
     });
 
-    // Create order in DB
     const order = await Order.create({
       user: userId,
       items: orderItems,
@@ -166,7 +163,6 @@ export const createOrderService = async (
       notes: args.notes,
     });
 
-    // Create payment record
     await Payment.create({
       order: order._id,
       user: userId,
@@ -177,10 +173,8 @@ export const createOrderService = async (
       gatewayOrderId: razorpayOrder.id,
     });
 
-    // Update order with payment reference
     await Order.findByIdAndUpdate(order._id, { payment: order._id });
 
-    // Publish Kafka event — high volume, fire and forget
     await publishOrderCreated({
       orderId: order._id.toString(),
       userId,
@@ -189,7 +183,6 @@ export const createOrderService = async (
       totalAmount,
     });
 
-    // Add notification via BullMQ — needs retry logic
     await notificationQueue.add("order_placed", {
       userId,
       type: "order_placed",
@@ -218,7 +211,6 @@ export const verifyPaymentService = async (args: {
   );
 
   if (!isValid && process.env.NODE_ENV === "production") {
-    // Update payment as failed
     await Payment.findOneAndUpdate(
       { gatewayOrderId: args.razorpayOrderId },
       { status: "failed", failureReason: "Signature mismatch" },
@@ -228,7 +220,6 @@ export const verifyPaymentService = async (args: {
     });
   }
 
-  // Update payment record
   const payment = await Payment.findOneAndUpdate(
     { gatewayOrderId: args.razorpayOrderId },
     {
@@ -245,7 +236,6 @@ export const verifyPaymentService = async (args: {
     });
   }
 
-  // Update order
   const order = await Order.findOneAndUpdate(
     { _id: payment.order },
     { paymentStatus: "paid", payment: payment._id },
@@ -258,7 +248,6 @@ export const verifyPaymentService = async (args: {
     });
   }
 
-  // Reduce stock atomically
   for (const item of order.items) {
     await withLock(`stock:product:${item.product}`, async () => {
       const product = await Product.findById(item.product);
@@ -271,7 +260,6 @@ export const verifyPaymentService = async (args: {
     });
   }
 
-  // Clear user cart after successful payment
   await Cart.findOneAndUpdate(
     { user: order.user },
     { items: [], totalAmount: 0 },
@@ -279,7 +267,6 @@ export const verifyPaymentService = async (args: {
 
   const user = order.user as any;
 
-  // Kafka event
   await publishPaymentVerified({
     orderId: order._id.toString(),
     email: user.email,
@@ -287,7 +274,6 @@ export const verifyPaymentService = async (args: {
     totalAmount: order.totalAmount,
   });
 
-  // BullMQ notification
   await notificationQueue.add("payment_success", {
     userId: user._id.toString(),
     type: "payment_success",
@@ -366,7 +352,6 @@ export const updateOrderStatusService = async (
     });
   }
 
-  // Invalidate order cache
   await redis.del(`order:${user._id}:${id}`);
 
   return order;
@@ -395,7 +380,6 @@ export const cancelOrderService = async (
     );
   }
 
-  // Restore stock
   for (const item of order.items) {
     await Product.findByIdAndUpdate(item.product, {
       $inc: { stock: item.quantity },
