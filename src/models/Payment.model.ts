@@ -20,10 +20,10 @@ export interface IPayment extends Document {
   refundAmount?: number;
   refundReason?: string;
   refundedAt?: Date;
-  method?: string; // card, upi, netbanking, wallet
-  bank?: string; // HDFC, SBI etc if available from gateway
+  method?: string; 
+  bank?: string;
   failureReason?: string;
-  metadata?: Record<string, any>; // raw webhook data from Razorpay
+  metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }

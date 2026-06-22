@@ -75,13 +75,11 @@ export const initiateRefundService = async (
     });
   }
 
-  // Initiate refund on Razorpay
   const refund = await razorpay.payments.refund(payment.gatewayPaymentId, {
-    amount: amount * 100, // paise
+    amount: amount * 100,
     notes: { reason },
   });
 
-  // Update payment record
   payment.status =
     amount === payment.amount ? "refunded" : "partially_refunded";
   payment.refundId = refund.id;
@@ -90,7 +88,6 @@ export const initiateRefundService = async (
   payment.refundedAt = new Date();
   await payment.save();
 
-  // Update order payment status
   await Order.findByIdAndUpdate(payment.order, {
     paymentStatus: "refunded",
   });

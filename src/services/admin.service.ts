@@ -28,7 +28,7 @@ export const logAdminAction = async (
   ip?: string,
   changes?: Record<string, any>,
 ): Promise<void> => {
-  await Admin.findOneAndUpdate(
+  const admin = await Admin.findOneAndUpdate(
     { user: userId },
     {
       $push: {
@@ -36,11 +36,17 @@ export const logAdminAction = async (
           $each: [
             { action, entity, entityId, ip, changes, timestamp: new Date() },
           ],
-          $slice: -500, // keep last 500 logs per admin
+          $slice: -500,
         },
       },
     },
   );
+  
+  if (!admin) {
+    throw new GraphQLError("Admin logs error", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
 };
 
 export const getAdminProfileService = async (userId: string) => {
