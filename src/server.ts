@@ -23,6 +23,8 @@ import { syncAllProductsToES } from "./services/search.service.ts";
 import { connectElasticsearch } from "./config/elasticsearch.ts";
 import { connectPubSub } from "./config/redisPubSub.ts";
 import { setupWebSocket } from "./websocket/notification.ws.ts";
+import { metricsMiddleware } from "./middleware/metrics.middleware.ts";
+import { register } from "./config/metrics.ts";
 
 const app: Application = express();
 const PORT = process.env.PORT || 4000;
@@ -48,6 +50,7 @@ const startServer = async (): Promise<void> => {
   setupWebSocket(httpServer);
 
   app.use(requestIdMiddleware);
+  app.use(metricsMiddleware);
   app.use(
     helmet({
       crossOriginEmbedderPolicy: false,
@@ -74,6 +77,11 @@ const startServer = async (): Promise<void> => {
       },
     }),
   );
+
+  app.get("/metrics", async (req, res) => {
+    res.set("Content-Type", register.contentType);
+    res.end(await register.metrics());
+  });
 
   app.use(globalErrorHandler);
 

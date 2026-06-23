@@ -18,6 +18,7 @@ import { notificationQueue, emailQueue } from "../queues/index";
 import { logger } from "../utils/logger.utils";
 import redis from "../config/redis";
 import { withLock } from "../utils/redisLock.utils";
+import { orderCreatedTotal, paymentVerifiedTotal } from "../config/metrics";
 
 export const getMyOrdersService = async (
   userId: string,
@@ -173,6 +174,8 @@ export const createOrderService = async (
       gatewayOrderId: razorpayOrder.id,
     });
 
+    orderCreatedTotal.inc();
+
     await Order.findByIdAndUpdate(order._id, { payment: order._id });
 
     await publishOrderCreated({
@@ -219,6 +222,8 @@ export const verifyPaymentService = async (args: {
       extensions: { code: "FORBIDDEN" },
     });
   }
+
+  paymentVerifiedTotal.inc({ status: "failed" });
 
   const payment = await Payment.findOneAndUpdate(
     { gatewayOrderId: args.razorpayOrderId },
@@ -281,6 +286,8 @@ export const verifyPaymentService = async (args: {
     message: `Payment of ₹${order.totalAmount} received. Your order is being processed.`,
     link: `/orders/${order._id}`,
   });
+
+  paymentVerifiedTotal.inc({ status: "success" });
 
   return { message: "Payment verified successfully" };
 };

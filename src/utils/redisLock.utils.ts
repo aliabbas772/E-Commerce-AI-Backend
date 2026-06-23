@@ -1,3 +1,4 @@
+import { redisLockFailures } from "../config/metrics";
 import redis from "../config/redis";
 import { logger } from "./logger.utils";
 
@@ -25,6 +26,7 @@ export const withLock = async <T>(
   const acquired = await acquireLock(key, ttlMs);
 
   if (!acquired) {
+    redisLockFailures.inc();
     throw new Error("Resource is currently being processed. Please try again.");
   }
 

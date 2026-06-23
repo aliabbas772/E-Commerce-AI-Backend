@@ -5,11 +5,9 @@ import { startNotificationWorker } from './queues/workers/notification.worker'
 import { logger } from './utils/logger.utils'
 
 const startWorker = async () => {
-  // Kafka consumer — handles high-volume order events
   await connectKafka()
   await startEmailConsumer()
 
-  // BullMQ workers — handles retryable jobs
   startEmailWorker()
   startNotificationWorker()
 
