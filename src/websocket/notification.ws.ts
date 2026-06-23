@@ -3,6 +3,7 @@ import { IncomingMessage } from "http";
 import { subscriber } from "../config/redisPubSub";
 import { verifyAccessToken } from "../utils/jwt.utils";
 import { logger } from "../utils/logger.utils";
+import { activeWebSocketConnections } from "../config/metrics";
 
 // Map of userId → Set of WebSocket connections
 // Why Set: same user can have multiple tabs open
@@ -17,6 +18,7 @@ const addClient = (userId: string, ws: WebSocket) => {
     });
   }
   clients.get(userId)!.add(ws);
+  activeWebSocketConnections.inc();
 };
 
 const removeClient = (userId: string, ws: WebSocket) => {
@@ -24,6 +26,7 @@ const removeClient = (userId: string, ws: WebSocket) => {
   if (!userClients) return;
 
   userClients.delete(ws);
+  activeWebSocketConnections.inc();
 
   if (userClients.size === 0) {
     clients.delete(userId);
