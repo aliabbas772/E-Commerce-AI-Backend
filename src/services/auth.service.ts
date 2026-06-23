@@ -64,9 +64,9 @@ export const sendRegisterOTPService = async (args: {
 }) => {
   const captchaValid = await verifyCaptcha(args.captchaToken);
   if (!captchaValid && process.env.NODE_ENV === "production") {
-    throw new GraphQLError("Captcha verification failed", {
-      extensions: { code: "BAD_USER_INPUT" },
-    });
+    // throw new GraphQLError("Captcha verification failed", {
+    //   extensions: { code: "BAD_USER_INPUT" },
+    // });
   }
 
   const validation = registerSchema.safeParse({
@@ -254,7 +254,7 @@ export const sendLoginOTPService = async (args: {
 }) => {
   const captchaValid = await verifyCaptcha(args.captchaToken);
   if (!captchaValid && process.env.NODE_ENV === "production") {
-    throw new GraphQLError("Captcha verification failed");
+    // throw new GraphQLError("Captcha verification failed");
   }
 
   // Rate limit
@@ -447,7 +447,7 @@ export const sendForgotPasswordOTPService = async (args: {
 }) => {
   const captchaValid = await verifyCaptcha(args.captchaToken);
   if (!captchaValid && process.env.NODE_ENV === "production") {
-    throw new GraphQLError("Captcha verification failed");
+    // throw new GraphQLError("Captcha verification failed");
   }
 
   await checkRateLimit(
