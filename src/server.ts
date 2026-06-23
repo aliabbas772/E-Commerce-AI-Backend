@@ -25,6 +25,7 @@ import { connectPubSub } from "./config/redisPubSub.ts";
 import { setupWebSocket } from "./websocket/notification.ws.ts";
 import { metricsMiddleware } from "./middleware/metrics.middleware.ts";
 import { register } from "./config/metrics.ts";
+import { graphqlRequestsTotal, graphqlRequestDuration } from "./config/metrics";
 
 const app: Application = express();
 const PORT = process.env.PORT || 4000;
@@ -40,9 +41,44 @@ const startServer = async (): Promise<void> => {
   process.on("SIGINT", gracefulShutdown);
   process.on("SIGTERM", gracefulShutdown);
 
+  // const server = new ApolloServer<Context>({
+  //   typeDefs,
+  //   resolvers,
+  // });
+
   const server = new ApolloServer<Context>({
     typeDefs,
     resolvers,
+    plugins: [
+      {
+        async requestDidStart({ request }) {
+          const start = Date.now();
+          const operationName = request.operationName || "anonymous";
+
+          return {
+            async willSendResponse({ response }) {
+              const duration = (Date.now() - start) / 1000;
+              const hasErrors =
+                response.body.kind === "single" &&
+                !!response.body.singleResult.errors;
+
+              graphqlRequestsTotal.inc({
+                operation_name: operationName,
+                operation_type: request.query?.includes("mutation")
+                  ? "mutation"
+                  : "query",
+                status: hasErrors ? "error" : "success",
+              });
+
+              graphqlRequestDuration.observe(
+                { operation_name: operationName },
+                duration,
+              );
+            },
+          };
+        },
+      },
+    ],
   });
 
   await server.start();
