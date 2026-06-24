@@ -147,7 +147,6 @@ export const verifyRegisterOTPService = async (
     });
   }
 
-  // Double check email not taken (race condition protection)
   const existingUser = await User.findOne({ email: parsed.email });
   if (existingUser) {
     throw new GraphQLError("Email already in use", {
@@ -155,7 +154,6 @@ export const verifyRegisterOTPService = async (
     });
   }
 
-  // Create user
   const user = await User.create({
     name: parsed.name,
     email: parsed.email,
@@ -164,15 +162,12 @@ export const verifyRegisterOTPService = async (
     isVerified: true,
   });
 
-  // Cleanup Redis
   await redis.del(`register:${args.email}`);
   await redis.del(`registerAttempts:${args.email}`);
   await redis.del(`verifyRegisterAttempts:${args.email}`);
 
-  // Publish welcome email via Kafka
   await publishWelcomeEmail({ email: user.email, name: user.name });
 
-  // Generate tokens
   const accessToken = generateAccessToken(user._id.toString(), user.role);
   const refreshToken = generateRefreshToken(user._id.toString());
 
@@ -182,15 +177,12 @@ export const verifyRegisterOTPService = async (
   return { accessToken, user };
 };
 
-// ─── Login with password ──────────────────────────────────────────
-
 export const loginWithPasswordService = async (
   args: { email: string; password: string },
   res: Response,
 ) => {
   loginSchema.parse(args);
 
-  // Rate limit
   await checkRateLimit(
     `loginAttempts:${args.email}`,
     5,
@@ -211,7 +203,6 @@ export const loginWithPasswordService = async (
     });
   }
 
-  // Google-only users have no real password
   if (user.googleId && !user.password.startsWith("$2")) {
     throw new GraphQLError(
       "This account uses Google sign-in. Please use Google to login.",
