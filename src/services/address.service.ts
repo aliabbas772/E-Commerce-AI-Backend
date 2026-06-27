@@ -1,7 +1,7 @@
 import { GraphQLError } from "graphql";
 import { Address } from "../models/Address.model";
 
-const MAX_ADDRESSES = 5; // limit per user — like Amazon
+const MAX_ADDRESSES = 5; 
 
 export const getMyAddressesService = async (userId: string) => {
   return Address.find({ user: userId }).sort({ isDefault: -1, createdAt: -1 });
@@ -14,7 +14,7 @@ export const getAddressByIdService = async (id: string, userId: string) => {
       extensions: { code: "NOT_FOUND" },
     });
   }
-  // User can only access their own address
+
   if (address.user.toString() !== userId) {
     throw new GraphQLError("Not authorized", {
       extensions: { code: "FORBIDDEN" },
@@ -44,7 +44,6 @@ export const createAddressService = async (
     );
   }
 
-  // If first address, make it default automatically
   const isFirst = count === 0;
 
   const address = await Address.create({

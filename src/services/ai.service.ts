@@ -10,8 +10,8 @@ import { timeout } from "../utils/timeout.utils";
 import { aiRequestsTotal } from "../config/metrics";
 
 const AI_RATE_LIMIT = 5;
-const AI_RATE_WINDOW = 900; // 15 minutes
-const AI_CACHE_TTL = 7200; // 2 hours
+const AI_RATE_WINDOW = 900;
+const AI_CACHE_TTL = 7200;
 
 export const getOutfitRecommendationService = async (
   args: { occasion: string; budget: number; gender: string },

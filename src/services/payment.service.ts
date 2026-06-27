@@ -20,8 +20,7 @@ export const getPaymentByOrderIdService = async (
 ) => {
   const payment = await Payment.findOne({ order: orderId }).populate("order");
   if (!payment) return null;
-
-  // User can only see their own payment unless admin check done in resolver
+  
   if (payment.user.toString() !== userId) {
     throw new GraphQLError("Not authorized", {
       extensions: { code: "FORBIDDEN" },

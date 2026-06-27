@@ -217,7 +217,6 @@ export const loginWithPasswordService = async (
     });
   }
 
-  // Clear rate limit on success
   await redis.del(`loginAttempts:${args.email}`);
 
   const accessToken = generateAccessToken(user._id.toString(), user.role);
@@ -226,7 +225,6 @@ export const loginWithPasswordService = async (
   await storeRefreshToken(user._id.toString(), refreshToken);
   setRefreshCookie(res, refreshToken);
 
-  // Update admin last login
   if (user.role === "admin") {
     await Admin.findOneAndUpdate(
       { user: user._id },
