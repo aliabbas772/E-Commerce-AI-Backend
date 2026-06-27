@@ -11,7 +11,6 @@ import {
   buildPaginatedResult,
 } from "../utils/pagination.utils";
 
-// Check if user actually bought this product
 const checkVerifiedPurchase = async (
   userId: string,
   productId: string,
@@ -24,7 +23,6 @@ const checkVerifiedPurchase = async (
   return !!order;
 };
 
-// Recalculate and update product rating
 const updateProductRating = async (productId: string) => {
   const result = await Review.aggregate([
     { $match: { product: productId } },
@@ -43,7 +41,6 @@ const updateProductRating = async (productId: string) => {
       totalReviews: result[0].totalReviews,
     });
   } else {
-    // No reviews left — reset
     await Product.findByIdAndUpdate(productId, {
       averageRating: 0,
       totalReviews: 0,
@@ -60,7 +57,7 @@ export const getProductReviewsService = async (args: {
 
   const [data, totalCount] = await Promise.all([
     Review.find({ product: args.productId })
-      .populate("user", "name") // only expose name, not email
+      .populate("user", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit),
@@ -92,7 +89,6 @@ export const createReviewService = async (
     });
   }
 
-  // Check for duplicate review
   const existingReview = await Review.findOne({
     product: input.productId,
     user: userId,
@@ -114,7 +110,6 @@ export const createReviewService = async (
     isVerifiedPurchase: isVerified,
   });
 
-  // Update product rating after new review
   await updateProductRating(input.productId);
 
   return Review.findById(review._id)
@@ -144,7 +139,6 @@ export const updateReviewService = async (
   Object.assign(review, input);
   await review.save();
 
-  // Recalculate rating
   await updateProductRating(review.product.toString());
 
   return Review.findById(id).populate("user", "name").populate("product");
@@ -162,7 +156,6 @@ export const deleteReviewService = async (
     });
   }
 
-  // Admin can delete any review, user only their own
   if (!isAdmin && review.user.toString() !== userId) {
     throw new GraphQLError("Not authorized", {
       extensions: { code: "FORBIDDEN" },
@@ -172,7 +165,6 @@ export const deleteReviewService = async (
   const productId = review.product.toString();
   await Review.findByIdAndDelete(id);
 
-  // Recalculate rating after deletion
   await updateProductRating(productId);
 
   return { message: "Review deleted successfully" };

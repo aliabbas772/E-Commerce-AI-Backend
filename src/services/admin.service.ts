@@ -74,7 +74,6 @@ export const getAuditLogsService = async (
       extensions: { code: "NOT_FOUND" },
     });
   }
-  // Return paginated audit logs from embedded array
   return admin.auditLogs
     .slice()
     .reverse()
@@ -100,7 +99,6 @@ export const createAdminService = async (
     });
   }
 
-  // Promote user role
   await User.findByIdAndUpdate(userId, { role: "admin" });
 
   const admin = await Admin.create({
@@ -141,7 +139,7 @@ export const deactivateAdminService = async (adminId: string) => {
       extensions: { code: "NOT_FOUND" },
     });
   }
-  // Demote user role
+  
   await User.findByIdAndUpdate(admin.user, { role: "user" });
   return { message: "Admin deactivated successfully" };
 };

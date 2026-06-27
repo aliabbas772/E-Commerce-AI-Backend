@@ -106,7 +106,6 @@ export const getProductByIdService = async (id: string) => {
 export const createProductService = async (input: any) => {
   createProductSchema.parse(input);
 
-  // Verify category exists
   const category = await Category.findById(input.category);
   if (!category) {
     throw new GraphQLError("Category not found", {
@@ -159,8 +158,6 @@ export const deleteProductService = async (id: string) => {
     });
   }
 
-  // Soft delete — never hard delete products
-  // Orders reference products — hard delete breaks order history
   await Product.findByIdAndUpdate(id, { isActive: false });
 
   await removeProductFromIndex(id);
