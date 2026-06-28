@@ -1,47 +1,55 @@
-// import pino from "pino";
-
-// export const logger = pino({
-//   level: process.env.LOG_LEVEL || "info",
-
-//   transport:
-//     process.env.NODE_ENV !== "production"
-//       ? {
-//           target: "pino-pretty",
-//           options: {
-//             colorize: true,
-//           },
-//         }
-//       : undefined,
-// });
-
 import pino from "pino";
 import util from "util";
 
-const baseLogger = pino({
-  level: process.env.LOG_LEVEL || "info",
-  transport:
-    process.env.NODE_ENV !== "production"
-      ? {
-          target: "pino-pretty",
-          options: {
-            colorize: true,
-          },
-        }
-      : undefined,
-});
+// 1. Build the transport array configurations first
+const targets: pino.TransportTargetOptions[] = [
+  {
+    target: "pino/file",
+    level: process.env.LOG_LEVEL || "info",
+    options: { destination: "/var/log/app/server.log", mkdir: true },
+  },
+];
 
-// Helper function to process multiple arguments into a structured format
+if (process.env.NODE_ENV === "production") {
+  targets.push({
+    target: "pino/file",
+    level: process.env.LOG_LEVEL || "info",
+    options: { destination: 1 }, // Standard Output (stdout)
+  });
+} else {
+  targets.push({
+    target: "pino-pretty",
+    level: process.env.LOG_LEVEL || "info",
+    options: { colorize: true },
+  });
+}
+
+// 2. Compile targets into a valid asynchronously-threaded stream
+const transportStream = pino.transport({ targets });
+
+// 3. Initialize the actual operational baseLogger instance using the stream
+const baseLogger = pino(
+  {
+    level: process.env.LOG_LEVEL || "info",
+    // Injects global indexed metadata tags on every single log payload
+    base: {
+      service: process.env.SERVICE_NAME || "ecommerce-server",
+      env: process.env.NODE_ENV || "development",
+    },
+  },
+  transportStream // Pass the processed stream pipeline directly here
+);
+
+// 4. Arguments formatter utility for handling printf-style parameters safely
 const formatArgs = (args: any[]) => {
-  // If the first argument is an object, Pino treats it as metadata
   if (args.length > 0 && typeof args[0] === "object" && args[0] !== null) {
     const [mergingObject, ...restStrings] = args;
     return [mergingObject, util.format(...restStrings)];
   }
-  // Otherwise, format everything into a single message string
   return [util.format(...args)];
 };
 
-// Exported wrapper that acts like console.log but preserves Pino formatting
+// 5. Export structured type-safe wrapper proxy methods
 export const logger = {
   trace: (...args: any[]) => {
     const [obj, msg] = formatArgs(args);
@@ -68,3 +76,4 @@ export const logger = {
     msg ? baseLogger.fatal(obj, msg) : baseLogger.fatal(obj);
   },
 };
+

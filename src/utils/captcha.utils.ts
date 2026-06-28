@@ -14,5 +14,5 @@ export const verifyCaptcha = async (
     },
   );
 
-  return response.data.success;
+  return (response.data as { success: boolean }).success;
 };

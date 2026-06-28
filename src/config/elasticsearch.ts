@@ -51,6 +51,7 @@ const createProductIndex = async (): Promise<void> => {
             fields: {
               suggest: {
                 type: "completion",
+                analyzer: "simple",
               },
             },
           },
