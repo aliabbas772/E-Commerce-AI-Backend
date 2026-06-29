@@ -1,0 +1,114 @@
+name: EcommerceAI Backend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: TypeScript type check
+        working-directory: ./server
+        run: npx tsc --noEmit
+
+      - name: Run tests with coverage
+        working-directory: ./server
+        run: npm run test:coverage
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test_jwt_secret_min_32_characters_long
+          JWT_REFRESH_SECRET: test_refresh_secret_min_32_chars
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: server/coverage
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        working-directory: ./server
+        run: docker build -t ecommerce-server:${{ github.sha }} .
+
+      - name: Build worker Docker image
+        working-directory: ./server
+        run: docker build -f Dockerfile.worker -t ecommerce-worker:${{ github.sha }} .
+
+      # ────────────────────────────────────────────────────────────
+      # AWS DEPLOYMENT — commented out until AWS account is set up
+      # Uncomment this section once you have:
+      #   1. AWS account on free tier
+      #   2. ECR repository created
+      #   3. EC2 instance running
+      #   4. GitHub secrets configured:
+      #      AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+      #      AWS_REGION, ECR_REPOSITORY, EC2_HOST, EC2_SSH_KEY
+      # ────────────────────────────────────────────────────────────
+
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ secrets.AWS_REGION }}
+      #
+      # - name: Login to Amazon ECR
+      #   id: ecr-login
+      #   uses: aws-actions/amazon-ecr-login@v2
+      #
+      # - name: Tag and push server image to ECR
+      #   run: |
+      #     docker tag ecommerce-server:${{ github.sha }} ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}-server:latest
+      #     docker push ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}-server:latest
+      #
+      # - name: Tag and push worker image to ECR
+      #   run: |
+      #     docker tag ecommerce-worker:${{ github.sha }} ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}-worker:latest
+      #     docker push ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}-worker:latest
+      #
+      # - name: Deploy to EC2 via SSH
+      #   uses: appleboy/ssh-action@v1
+      #   with:
+      #     host: ${{ secrets.EC2_HOST }}
+      #     username: ec2-user
+      #     key: ${{ secrets.EC2_SSH_KEY }}
+      #     script: |
+      #       cd /home/ec2-user/ecommerceai
+      #       aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.ecr-login.outputs.registry }}
+      #       docker-compose pull server worker
+      #       docker-compose up -d server worker
+      #       sleep 10
+      #       curl -f http://localhost:4000/health || exit 1
+      #       echo "✅ Deployment successful"
+
+      - name: Build success message
+        run: echo "✅ Build complete. AWS deployment will be enabled after AWS setup."
