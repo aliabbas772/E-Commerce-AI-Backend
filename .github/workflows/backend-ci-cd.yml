@@ -12,6 +12,8 @@ on:
     - 'server/**'
     - '.github/workflows/backend-ci-cd.yml'
 
+  workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
