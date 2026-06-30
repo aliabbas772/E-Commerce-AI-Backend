@@ -10,6 +10,7 @@ import {
   getPaginationParams,
   buildPaginatedResult,
 } from "../utils/pagination.utils";
+import mongoose from "mongoose";
 
 const checkVerifiedPurchase = async (
   userId: string,
@@ -25,7 +26,7 @@ const checkVerifiedPurchase = async (
 
 const updateProductRating = async (productId: string) => {
   const result = await Review.aggregate([
-    { $match: { product: productId } },
+    { $match: { product: new mongoose.Types.ObjectId(productId) } },
     {
       $group: {
         _id: "$product",

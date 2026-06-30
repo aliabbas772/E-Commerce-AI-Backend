@@ -6,21 +6,34 @@ const targets: pino.TransportTargetOptions[] = [
   {
     target: "pino/file",
     level: process.env.LOG_LEVEL || "info",
-    options: { destination: "/var/log/app/server.log", mkdir: true },
+    options: { destination: "./server.log", mkdir: true },
   },
 ];
 
-if (process.env.NODE_ENV === "production") {
+// if (process.env.NODE_ENV === "production") {
+//   targets.push({
+//     target: "pino/file",
+//     level: process.env.LOG_LEVEL || "info",
+//     options: { destination: 1 }, // Standard Output (stdout)
+//   });
+// } else {
+//   targets.push({
+//     target: "pino-pretty",
+//     level: process.env.LOG_LEVEL || "info",
+//     options: { colorize: true },
+//   });
+// }
+
+const isProduction = process.env.NODE_ENV === "production";
+
+if (isProduction) {
   targets.push({
     target: "pino/file",
     level: process.env.LOG_LEVEL || "info",
-    options: { destination: 1 }, // Standard Output (stdout)
-  });
-} else {
-  targets.push({
-    target: "pino-pretty",
-    level: process.env.LOG_LEVEL || "info",
-    options: { colorize: true },
+    options: {
+      destination: process.env.LOG_FILE_PATH || "./server.log",
+      mkdir: true,
+    },
   });
 }
 
@@ -37,7 +50,7 @@ const baseLogger = pino(
       env: process.env.NODE_ENV || "development",
     },
   },
-  transportStream // Pass the processed stream pipeline directly here
+  transportStream, // Pass the processed stream pipeline directly here
 );
 
 // 4. Arguments formatter utility for handling printf-style parameters safely
@@ -76,4 +89,3 @@ export const logger = {
     msg ? baseLogger.fatal(obj, msg) : baseLogger.fatal(obj);
   },
 };
-
