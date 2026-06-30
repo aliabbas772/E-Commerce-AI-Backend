@@ -10,9 +10,9 @@
     "start": "node dist/index.js",
     "worker": "tsx watch src/worker.ts",
     "monit": "pm2 monit",
-    "test": "jest --runInBand",
     "test:watch": "jest --watch --runInBand",
-    "test:coverage": "jest --coverage --runInBand"
+    "test": "cross-env NODE_ENV=test jest --runInBand",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand"
   },
   "keywords": [],
   "author": "",
@@ -68,6 +68,7 @@
     "@types/supertest": "^7.2.0",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
+    "cross-env": "^10.1.0",
     "jest": "^30.4.2",
     "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.14",
