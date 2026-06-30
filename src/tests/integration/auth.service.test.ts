@@ -10,7 +10,7 @@ describe("User Model — Password Handling", () => {
     });
 
     expect(user.password).not.toBe("Password@123");
-    expect(user.password.startsWith("$2")).toBe(true); // bcrypt prefix
+    expect(user.password.startsWith("$2")).toBe(true);
   });
 
   test("comparePassword validates correct password", async () => {
