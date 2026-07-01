@@ -22,6 +22,7 @@
     "@apollo/server": "^4.13.0",
     "@elastic/elasticsearch": "^8.19.1",
     "@google/generative-ai": "^0.24.1",
+    "@upstash/redis": "^1.38.0",
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.78.0",

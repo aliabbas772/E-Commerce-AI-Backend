@@ -10,6 +10,7 @@ import { activeWebSocketConnections } from "../config/metrics";
 const clients = new Map<string, Set<WebSocket>>();
 
 const addClient = (userId: string, ws: WebSocket) => {
+  if (!subscriber) return;
   if (!clients.has(userId)) {
     clients.set(userId, new Set());
     // Subscribe to Redis channel for this user
@@ -22,6 +23,7 @@ const addClient = (userId: string, ws: WebSocket) => {
 };
 
 const removeClient = (userId: string, ws: WebSocket) => {
+  if (!subscriber) return;
   const userClients = clients.get(userId);
   if (!userClients) return;
 
@@ -92,6 +94,7 @@ export const setupWebSocket = (server: any): void => {
 
   // Redis subscriber listens to ALL user channels
   // Routes messages to correct WebSocket clients
+  if (!subscriber) return;
   subscriber.on("message", (channel: string, message: string) => {
     // channel format: "user:userId:notifications"
     const parts = channel.split(":");
