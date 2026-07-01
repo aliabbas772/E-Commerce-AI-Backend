@@ -4,8 +4,6 @@ A production grade ecommerce backend built with the MERN stack, GraphQL, and AI 
 
 **Live API:** [Add your Render URL here after deploy]
 
-> Note: hosted on Render free tier, the server spins down after inactivity, first request may take 30 to 50 seconds to respond.
-
 ## Overview
 
 This backend powers a full ecommerce platform, covering authentication, catalog management, cart and checkout, payments, search, real time order updates, and background job processing. It was built as a portfolio project to demonstrate backend architecture and system design at a production standard.
