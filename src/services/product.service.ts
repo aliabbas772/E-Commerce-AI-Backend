@@ -33,7 +33,7 @@ export const getProductsService = async (args: {
 }) => {
   const cacheKey = `products:${JSON.stringify(args)}`;
   const cached = await redis.get(cacheKey);
-  if (cached) return JSON.parse(cached);
+  if (cached) return JSON.parse(cached as string);
 
   const { page, limit, skip } = getPaginationParams(args);
   const query: any = { isActive: true };
@@ -68,7 +68,7 @@ export const getProductsService = async (args: {
 export const getProductByIdService = async (id: string) => {
   const cacheKey = `product:${id}`;
   const cached = await redis.get(cacheKey);
-  if (cached) return JSON.parse(cached);
+  if (cached) return JSON.parse(cached as string);
 
   const product = await Product.findById(id).populate("category");
   if (!product) {
