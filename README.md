@@ -82,8 +82,8 @@ docker compose up
 
 ## API Access
 
-GraphQL Playground: `https://e-commerce-ai-backend-lxva.onrender.com/graphql`
-REST health check: `https://e-commerce-ai-backend-lxva.onrender.com/health`
+GraphQL Playground: `localhost:port/graphql`
+REST health check: `localhost:port/health`
 
 ## Author
 
