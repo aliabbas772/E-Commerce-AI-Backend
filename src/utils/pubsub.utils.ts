@@ -7,5 +7,5 @@ export const publishToUser = async (
 ): Promise<void> => {
   const channel = `user:${userId}:notifications`;
   const message = JSON.stringify({ event, data, timestamp: Date.now() });
-  await publisher.publish(channel, message);
+  await publisher?.publish(channel, message);
 };

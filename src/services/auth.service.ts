@@ -137,7 +137,7 @@ export const verifyRegisterOTPService = async (
     "Too many verification attempts.",
   );
 
-  const parsed = JSON.parse(userDetails);
+  const parsed = JSON.parse(userDetails as string);
 
   // Verify OTP
   const isValid = await verifyOTPFromRedis(parsed.email, args.otp);

@@ -25,7 +25,7 @@ export const getOutfitRecommendationService = async (
     if (cached) {
       logger.info("AI outfit cache hit");
       aiRequestsTotal.inc({ type: "outfit", cache_status: "hit" });
-      return { recommendation: JSON.parse(cached) };
+      return { recommendation: JSON.parse(cached as string) };
     }
 
     // Rate limit per user
@@ -68,7 +68,7 @@ export const getSizeRecommendationService = async (
     if (cached) {
       logger.info("AI size cache hit");
       aiRequestsTotal.inc({ type: "size", cache_status: "hit" });
-      return { recommendation: JSON.parse(cached) };
+      return { recommendation: JSON.parse(cached as string) };
     }
 
     const attemptsKey = `AiSizeAttempts:${userId}`;

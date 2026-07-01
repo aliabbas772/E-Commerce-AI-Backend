@@ -13,7 +13,7 @@ const clearCategoryCache = async () => {
 export const getCategories = async () => {
   const cached = await redis.get(CACHE_KEY);
   // console.log(JSON.parse(cached!))
-  if (cached) return JSON.parse(cached);
+  if (cached) return JSON.parse(cached as string);
 
   const categories = await Category.find({ isActive: true })
     .populate("parentCategory")
