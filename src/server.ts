@@ -32,11 +32,22 @@ const PORT = process.env.PORT || 4000;
 
 const startServer = async (): Promise<void> => {
   await connectDB();
-  await connectElasticsearch();
-  await syncAllProductsToES();
   await createIndexes();
-  await connectPubSub();
-  await connectKafka();
+
+  const DEMO_MODE = process.env.DEMO_MODE === "true";
+  console.log(DEMO_MODE ? "Running in DEMO_MODE" : "Running in NORMAL_MODE");
+  if (!DEMO_MODE) {
+    await connectElasticsearch();
+        console.log("1");
+    await syncAllProductsToES();
+        console.log("2");
+    await connectPubSub();
+        console.log("3");
+    await connectKafka();
+        console.log("4");
+  }
+
+  logger.info("Skipping es, redis, kafka connection in demo mode");
 
   process.on("SIGINT", gracefulShutdown);
   process.on("SIGTERM", gracefulShutdown);
@@ -45,7 +56,7 @@ const startServer = async (): Promise<void> => {
   //   typeDefs,
   //   resolvers,
   // });
-
+ 
   const server = new ApolloServer<Context>({
     typeDefs,
     resolvers,
