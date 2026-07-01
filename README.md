@@ -2,8 +2,6 @@
 
 A production grade ecommerce backend built with the MERN stack, GraphQL, and AI powered product recommendations using Gemini AI.
 
-**Live API:** [Add your Render URL here after deploy]
-
 ## Overview
 
 This backend powers a full ecommerce platform, covering authentication, catalog management, cart and checkout, payments, search, real time order updates, and background job processing. It was built as a portfolio project to demonstrate backend architecture and system design at a production standard.
@@ -45,10 +43,6 @@ This backend powers a full ecommerce platform, covering authentication, catalog 
 - Docker for containerization
 - CI/CD pipeline for automated build and deploy
 
-## Deployment Note
-
-This project is fully implemented with Kafka, Elasticsearch, and Prometheus/Grafana as shown above. In the free tier hosted demo on Render, these three services are feature flagged off since they require persistent infrastructure that isn't available on free hosting plans. All core functionality (auth, catalog, cart, checkout, payments, GraphQL API, Redis caching, BullMQ jobs, Gemini AI, WebSockets) is fully live and testable.
-
 To run the complete stack including Kafka, Elasticsearch, and monitoring, clone the repo and run locally with Docker Compose.
 
 ## Getting Started Locally
@@ -58,7 +52,7 @@ git clone https://github.com/aliabbas772/E-Commerce-AI-Backend.git
 cd ecommerceai-backend
 npm install
 cp .env.example .env
-# fill in your MongoDB URI, Redis URL, Razorpay keys, Gemini API key, JWT secret
+# fill in your MongoDB URI, Redis URL, Razorpay keys, Gemini API key, JWT secret etc...
 npm run dev
 ```
 
@@ -85,6 +79,3 @@ docker compose up
 GraphQL Playground: `localhost:port/graphql`
 REST health check: `localhost:port/health`
 
-## Author
-
-Built by [Your Name] as a backend architecture and system design portfolio project.
