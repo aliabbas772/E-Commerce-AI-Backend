@@ -49,17 +49,11 @@ To run the complete stack including Kafka, Elasticsearch, and monitoring, clone 
 
 ```bash
 git clone https://github.com/aliabbas772/E-Commerce-AI-Backend.git
-cd ecommerceai-backend
+cd E-Commerce-AI-Backend
 npm install
 cp .env.example .env
 # fill in your MongoDB URI, Redis URL, Razorpay keys, Gemini API key, JWT secret etc...
 npm run dev
-```
-
-To run the full stack with Kafka, Elasticsearch, and monitoring:
-
-```bash
-docker compose up
 ```
 
 ## Environment Variables
@@ -71,8 +65,9 @@ docker compose up
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Razorpay payment credentials                    |
 | `GEMINI_API_KEY`                          | Google Gemini AI API key                        |
 | `JWT_SECRET`                              | Secret for signing auth tokens                  |
-| `DEMO_MODE`                               | Set to `false` to enable Kafka, Elastic search, |
+| `DEMO_MODE`                               | Set to `true` to disable Kafka, Elastic search, |
 |                                           | Redis, prometheus, grafana locally              |
+## check .env.example for more env variables...
 
 ## API Access
 

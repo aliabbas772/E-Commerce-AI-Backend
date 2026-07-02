@@ -25,7 +25,8 @@ import { logger } from "../utils/logger.utils";
 import { verifyCaptcha } from "../utils/captcha.utils";
 import { Request, Response } from "express";
 
-const REFRESH_TTL = 604800; 
+const REFRESH_TTL = 604800;
+const DEMO_MODE = process.env.DEMO_MODE === "true";
 
 const setRefreshCookie = (res: Response, token: string) => {
   res.cookie("refreshToken", token, {
@@ -108,7 +109,7 @@ export const sendRegisterOTPService = async (args: {
   );
 
   const otp = generateOTP();
-  logger.info(`Register OTP for ${args.email}: ${otp}`); 
+  logger.info(`Register OTP for ${args.email}: ${otp}`);
   await saveOTPToRedis(args.email, otp);
   await sendOTPtoEmail(args.email, otp);
 
@@ -166,7 +167,9 @@ export const verifyRegisterOTPService = async (
   await redis.del(`registerAttempts:${args.email}`);
   await redis.del(`verifyRegisterAttempts:${args.email}`);
 
-  await publishWelcomeEmail({ email: user.email, name: user.name });
+  if (!DEMO_MODE) {
+    await publishWelcomeEmail({ email: user.email, name: user.name });
+  }
 
   const accessToken = generateAccessToken(user._id.toString(), user.role);
   const refreshToken = generateRefreshToken(user._id.toString());
