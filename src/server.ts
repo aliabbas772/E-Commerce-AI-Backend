@@ -38,13 +38,9 @@ const startServer = async (): Promise<void> => {
   console.log(DEMO_MODE ? "Running in DEMO_MODE" : "Running in NORMAL_MODE");
   if (!DEMO_MODE) {
     await connectElasticsearch();
-        console.log("1");
     await syncAllProductsToES();
-        console.log("2");
     await connectPubSub();
-        console.log("3");
     await connectKafka();
-        console.log("4");
   }
 
   logger.info("Skipping es, redis, kafka connection in demo mode");
@@ -56,7 +52,7 @@ const startServer = async (): Promise<void> => {
   //   typeDefs,
   //   resolvers,
   // });
- 
+
   const server = new ApolloServer<Context>({
     typeDefs,
     resolvers,
