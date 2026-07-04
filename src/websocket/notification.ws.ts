@@ -14,7 +14,7 @@ const addClient = (userId: string, ws: WebSocket) => {
   if (!clients.has(userId)) {
     clients.set(userId, new Set());
     // Subscribe to Redis channel for this user
-    subscriber.subscribe(`user:${userId}:notifications`, (err) => {
+    subscriber?.subscribe(`user:${userId}:notifications`, (err) => {
       if (err) logger.error(`Subscribe error for user ${userId}: ${err}`);
     });
   }
@@ -33,7 +33,7 @@ const removeClient = (userId: string, ws: WebSocket) => {
   if (userClients.size === 0) {
     clients.delete(userId);
     // Unsubscribe from Redis when no connections left
-    subscriber.unsubscribe(`user:${userId}:notifications`);
+    subscriber?.unsubscribe(`user:${userId}:notifications`);
   }
 };
 
@@ -95,7 +95,7 @@ export const setupWebSocket = (server: any): void => {
   // Redis subscriber listens to ALL user channels
   // Routes messages to correct WebSocket clients
   if (!subscriber) return;
-  subscriber.on("message", (channel: string, message: string) => {
+  subscriber?.on("message", (channel: string, message: string) => {
     // channel format: "user:userId:notifications"
     const parts = channel.split(":");
     const userId = parts[1];
