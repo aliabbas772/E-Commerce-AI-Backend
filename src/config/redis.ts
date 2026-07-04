@@ -3,6 +3,7 @@ import { logger } from "../utils/logger.utils";
 import { Redis as UpstashRedis} from "@upstash/redis";
 
 const DEMO_MODE = process.env.DEMO_MODE === "true";
+console.log("DEMO_MODE:", process.env.DEMO_MODE);
 let redis: IORedis | UpstashRedis;
 
 if (DEMO_MODE) {
