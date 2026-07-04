@@ -6,6 +6,7 @@ import { logger } from "../utils/logger.utils";
 // It cannot run regular Redis commands while subscribed
 // So we need a separate publisher connection for regular commands
 const DEMO_MODE = process.env.DEMO_MODE === "true";
+console.log("DEMO_MODE in redisPubSub:", process.env.DEMO_MODE);
 
 export const publisher = DEMO_MODE
   ? null
