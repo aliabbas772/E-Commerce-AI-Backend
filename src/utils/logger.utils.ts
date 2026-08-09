@@ -1,59 +1,43 @@
 import pino from "pino";
 import util from "util";
 
-// 1. Build the transport array configurations first
+const LOG_DIR = process.env.LOG_FILE_PATH || "/var/log/app";
+const SERVICE_NAME = process.env.SERVICE_NAME || "ecommerce-server";
+
 const targets: pino.TransportTargetOptions[] = [
   {
     target: "pino/file",
     level: process.env.LOG_LEVEL || "info",
-    options: { destination: "./server.log", mkdir: true },
+    options: {
+      destination: `${LOG_DIR}/${SERVICE_NAME}.log`,
+      mkdir: true,
+    },
   },
 ];
 
-// if (process.env.NODE_ENV === "production") {
-//   targets.push({
-//     target: "pino/file",
-//     level: process.env.LOG_LEVEL || "info",
-//     options: { destination: 1 }, // Standard Output (stdout)
-//   });
-// } else {
-//   targets.push({
-//     target: "pino-pretty",
-//     level: process.env.LOG_LEVEL || "info",
-//     options: { colorize: true },
-//   });
-// }
-
 const isProduction = process.env.NODE_ENV === "production";
 
-if (isProduction) {
+if (!isProduction) {
   targets.push({
-    target: "pino/file",
+    target: "pino-pretty",
     level: process.env.LOG_LEVEL || "info",
-    options: {
-      destination: process.env.LOG_FILE_PATH || "./server.log",
-      mkdir: true,
-    },
+    options: { colorize: true, destination: 1 },
   });
 }
 
-// 2. Compile targets into a valid asynchronously-threaded stream
 const transportStream = pino.transport({ targets });
 
-// 3. Initialize the actual operational baseLogger instance using the stream
 const baseLogger = pino(
   {
     level: process.env.LOG_LEVEL || "info",
-    // Injects global indexed metadata tags on every single log payload
     base: {
-      service: process.env.SERVICE_NAME || "ecommerce-server",
+      service: SERVICE_NAME,
       env: process.env.NODE_ENV || "development",
     },
   },
-  transportStream, // Pass the processed stream pipeline directly here
+  transportStream,
 );
 
-// 4. Arguments formatter utility for handling printf-style parameters safely
 const formatArgs = (args: any[]) => {
   if (args.length > 0 && typeof args[0] === "object" && args[0] !== null) {
     const [mergingObject, ...restStrings] = args;
@@ -62,7 +46,6 @@ const formatArgs = (args: any[]) => {
   return [util.format(...args)];
 };
 
-// 5. Export structured type-safe wrapper proxy methods
 export const logger = {
   trace: (...args: any[]) => {
     const [obj, msg] = formatArgs(args);

@@ -8,6 +8,13 @@ import {
 } from "../utils/ai.utils";
 import { timeout } from "../utils/timeout.utils";
 import { aiRequestsTotal } from "../config/metrics";
+import { GoogleGenAI } from "@google/genai";
+import { Order } from "../models/Order.model";
+
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+const SUPPORT_RATE_LIMIT = 10;
+const SUPPORT_RATE_WINDOW = 900;
 
 const AI_RATE_LIMIT = 5;
 const AI_RATE_WINDOW = 900;
@@ -101,4 +108,63 @@ export const getSizeRecommendationService = async (
     logger.error(error);
     throw error;
   }
+};
+
+export const askSupportChatService = async (
+  query: string,
+  userId: string,
+): Promise<{ reply: string }> => {
+  const attemptsKey = `SupportChatAttempts:${userId}`;
+  const attempts = await redis.incr(attemptsKey);
+  if (attempts === 1) await redis.expire(attemptsKey, SUPPORT_RATE_WINDOW);
+  if (attempts > SUPPORT_RATE_LIMIT) {
+    throw new GraphQLError("Too many support requests, try again later", {
+      extensions: { code: "RATE_LIMITED" },
+    });
+  }
+
+  const recentOrder = await Order.findOne({ user: userId })
+    .sort({ createdAt: -1 })
+    .populate("items.product")
+    .lean();
+
+  let orderContext = "No orders found for this account.";
+  if (recentOrder) {
+    const itemsList = recentOrder.items
+      .map(
+        (i: any) =>
+          `${i.product?.name ?? "item"} (size ${i.size}, qty ${i.quantity})`,
+      )
+      .join(", ");
+    orderContext = `
+      - Order ID: ${recentOrder._id}
+      - Items: ${itemsList}
+      - Total: ₹${recentOrder.totalAmount}
+      - Payment status: ${recentOrder.paymentStatus}
+      - Delivery status: ${recentOrder.deliveryStatus}
+    `;
+  }
+
+  const prompt = `
+    You are a customer support assistant for an e-commerce platform.
+    Use the [USER CONTEXT DATA] below to answer accurately.
+    If the context doesn't answer the question, say you don't have that info.
+
+    [STORE POLICY]
+    - Shipping takes 3-5 days.
+    - Returns allowed within 14 days of delivery.
+
+    [USER CONTEXT DATA]
+    ${orderContext}
+
+    Customer question: "${query}"
+    Answer:
+  `;
+
+  const response = await genAI.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+  });
+
+  return { reply: response.text ?? "Sorry, I couldn't generate a response." };
 };

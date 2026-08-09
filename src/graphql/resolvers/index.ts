@@ -13,6 +13,7 @@ import reviewResolvers from "./review.resolver";
 import adminResolvers from "./admin.resolver";
 import notificationResolvers from "./notification.resolver";
 import searchResolvers from "./search.resolver";
+import userResolvers from "./user.resolver";
 
 const resolvers = merge(
   authResolvers,
@@ -28,6 +29,7 @@ const resolvers = merge(
   adminResolvers,
   notificationResolvers,
   searchResolvers,
+  userResolvers,
 );
 
 export default resolvers;

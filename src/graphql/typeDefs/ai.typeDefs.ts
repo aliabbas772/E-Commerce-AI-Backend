@@ -1,8 +1,12 @@
-import { gql } from 'graphql-tag'
+import { gql } from "graphql-tag";
 
 const aiTypeDefs = gql`
   type AIRecommendation {
     recommendation: String!
+  }
+
+  type SupportChatResponse {
+    reply: String!
   }
 
   type Query {
@@ -18,7 +22,9 @@ const aiTypeDefs = gql`
       gender: String!
       category: String!
     ): AIRecommendation!
-  }
-`
 
-export default aiTypeDefs
+    askSupportChat(query: String!): SupportChatResponse!
+  }
+`;
+
+export default aiTypeDefs;
