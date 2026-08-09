@@ -11,6 +11,7 @@ import reviewTypeDefs from "./review.typeDefs";
 import adminTypeDefs from "./admin.typeDefs";
 import notificationTypeDefs from "./notification.typeDefs";
 import searchTypeDefs from "./search.typeDefs";
+import userTypeDefs from "./user.typeDefs";
 
 export default [
   authTypeDefs,
@@ -26,4 +27,5 @@ export default [
   adminTypeDefs,
   notificationTypeDefs,
   searchTypeDefs,
+  userTypeDefs,
 ];

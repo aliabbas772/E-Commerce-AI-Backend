@@ -23,6 +23,10 @@ const requireAdmin = (context: Context) => {
 };
 
 const productResolvers = {
+  Product: {
+    totalStock: (parent: any) =>
+      parent.sizes.reduce((sum: number, s: any) => sum + s.stock, 0),
+  },
   Query: {
     getProducts: (_: unknown, args: any) => getProductsService(args),
     getProductById: (_: unknown, args: { id: string }) =>

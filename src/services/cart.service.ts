@@ -20,39 +20,43 @@ export const addToCart = async (
     });
   }
 
-  if (product.stock < quantity) {
-    throw new GraphQLError("Insufficient stock", {
-      extensions: { code: "BAD_USER_INPUT" },
-    });
-  }
-
-  if (!product.sizes.includes(size)) {
+  const sizeEntry = product.sizes.find((s: any) => s.size === size) as any;
+  if (!sizeEntry) {
     throw new GraphQLError("Invalid size for this product", {
       extensions: { code: "BAD_USER_INPUT" },
     });
   }
 
   let cart = await Cart.findOne({ user: userId });
-
   if (!cart) {
     cart = new Cart({ user: userId, items: [] });
   }
 
+  // Cast item.product to any to avoid "Property does not exist on type string"
   const existingItem = cart.items.find(
-    (item) => item.product.toString() === productId && item.size === size,
+    (item) =>
+      (item.product as any).toString() === productId && item.size === size,
   );
 
-  // console.log(quantity);
+  const currentQty = existingItem ? existingItem.quantity : 0;
+  const newQty = currentQty + quantity;
+
+  if (newQty > sizeEntry.stock) {
+    throw new GraphQLError(`Only ${sizeEntry.stock} left in size ${size}`, {
+      extensions: { code: "BAD_USER_INPUT" },
+    });
+  }
+  if (newQty > 10) {
+    throw new GraphQLError("Maximum 10 items per product allowed", {
+      extensions: { code: "BAD_USER_INPUT" },
+    });
+  }
 
   if (existingItem) {
-    const newQty = existingItem.quantity + quantity;
-    if (newQty > 10) {
-      throw new GraphQLError("Maximum 10 items per product allowed");
-    }
     existingItem.quantity = newQty;
   } else {
     cart.items.push({
-      product: product._id,
+      product: product._id as any, // Cast to avoid strict schema type errors
       quantity,
       size,
       price: product.price,
@@ -77,7 +81,8 @@ export const updateCart = async (
   }
 
   const item = cart.items.find(
-    (item) => item.product.toString() === productId && item.size === size,
+    (item) =>
+      (item.product as any).toString() === productId && item.size === size,
   );
 
   if (!item) {
@@ -88,7 +93,8 @@ export const updateCart = async (
 
   if (quantity === 0) {
     cart.items = cart.items.filter(
-      (item) => !(item.product.toString() === productId && item.size === size),
+      (item) =>
+        !((item.product as any).toString() === productId && item.size === size),
     ) as any;
   } else {
     item.quantity = quantity;
@@ -112,7 +118,8 @@ export const removeFromCart = async (
   }
 
   cart.items = cart.items.filter(
-    (item) => !(item.product.toString() === productId && item.size === size),
+    (item) =>
+      !((item.product as any).toString() === productId && item.size === size),
   ) as any;
 
   await cart.save();
@@ -121,6 +128,6 @@ export const removeFromCart = async (
 
 export const clearCart = async (userId: string) => {
   await Cart.findOneAndUpdate({ user: userId }, { items: [], totalAmount: 0 });
-  
+
   return { message: "Cart cleared" };
 };

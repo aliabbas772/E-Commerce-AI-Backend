@@ -13,7 +13,7 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 COPY package*.json /app
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 

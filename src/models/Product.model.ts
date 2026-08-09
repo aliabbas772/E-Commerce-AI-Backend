@@ -48,15 +48,19 @@ const ProductSchema = new Schema<IProduct>(
       required: [true, "Category is required"],
     },
     sizes: {
-      type: [String],
-      enum: ["XS", "S", "M", "L", "XL", "XXL"],
-      default: [],
-    },
-    stock: {
-      type: Number,
+      type: [
+        {
+          size: {
+            type: String,
+            required: true,
+            enum: ["XS", "S", "M", "L", "XL", "XXL"],
+            default: [],
+          },
+          stock: { type: Number, required: true, min: 0, default: 0 },
+        },
+      ],
       required: true,
-      default: 0,
-      min: 0,
+      validate: [(arr: any[]) => arr.length > 0, "At least one size required"],
     },
     sku: {
       // Why SKU: unique identifier per product variant

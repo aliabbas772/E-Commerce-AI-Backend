@@ -25,7 +25,7 @@ const adminTypeDefs = gql`
     getAuditLogs(adminId: ID!, page: Int, limit: Int): [AuditLog!]!
   }
 
-  type Mutation {
+  type Mutation { 
     createAdmin(userId: ID!, permissions: [String!]!): AdminProfile!
 
     updateAdminPermissions(adminId: ID!, permissions: [String!]!): AdminProfile!

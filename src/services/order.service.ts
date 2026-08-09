@@ -120,17 +120,33 @@ export const createOrderService = async (
 
     for (const item of args.items) {
       const product = await Product.findById(item.productId);
-      if (!product || !product.isActive) {
-        throw new GraphQLError(`Product not found or unavailable`, {
+
+      // FIX: Add early return guard check to guarantee product is not null
+      if (!product) {
+        throw new GraphQLError(`Product with ID ${item.productId} not found`, {
           extensions: { code: "NOT_FOUND" },
         });
       }
-      if (product.stock < item.quantity) {
-        throw new GraphQLError(`Insufficient stock for ${product.name}`, {
-          extensions: { code: "BAD_USER_INPUT" },
-        });
+
+      const sizeEntry = product.sizes.find(
+        (s: any) => s.size === item.size,
+      ) as any;
+      if (!sizeEntry) {
+        throw new GraphQLError(
+          `Size ${item.size} not available for ${product.name}`,
+          { extensions: { code: "BAD_USER_INPUT" } },
+        );
       }
-      if (!product.sizes.includes(item.size)) {
+      if (sizeEntry.stock < item.quantity) {
+        throw new GraphQLError(
+          `Only ${sizeEntry.stock} left of ${product.name} in size ${item.size}`,
+          { extensions: { code: "BAD_USER_INPUT" } },
+        );
+      }
+
+      // FIX: Changed .includes match pattern because product.sizes is an array of objects
+      const hasSize = product.sizes.some((s: any) => s.size === item.size);
+      if (!hasSize) {
         throw new GraphQLError(
           `Size ${item.size} not available for ${product.name}`,
           {
@@ -254,14 +270,21 @@ export const verifyPaymentService = async (args: {
   }
 
   for (const item of order.items) {
-    await withLock(`stock:product:${item.product}`, async () => {
-      const product = await Product.findById(item.product);
-      if (!product || product.stock < item.quantity) {
+    // FIX: Stringified the product ID reference to use cleanly inside Redis lock key string template
+    const prodIdString = (item.product as any).toString();
+
+    await withLock(`stock:product:${prodIdString}:${item.size}`, async () => {
+      const product = await Product.findById(prodIdString);
+      const sizeEntry = product?.sizes.find(
+        (s: any) => s.size === item.size,
+      ) as any;
+      if (!product || !sizeEntry || sizeEntry.stock < item.quantity) {
         throw new GraphQLError("Insufficient stock");
       }
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity },
-      });
+      await Product.updateOne(
+        { _id: prodIdString, "sizes.size": item.size },
+        { $inc: { "sizes.$.stock": -item.quantity } },
+      );
     });
   }
 

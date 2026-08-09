@@ -1,6 +1,11 @@
 import { gql } from "graphql-tag";
 
 const productTypeDefs = gql`
+  type SizeStock {
+    size: String!
+    stock: Int!
+  }
+
   type Product {
     _id: ID!
     name: String!
@@ -9,14 +14,19 @@ const productTypeDefs = gql`
     comparePrice: Float
     images: [String!]!
     category: Category!
-    sizes: [String!]!
-    stock: Int!
+    sizes: [SizeStock!]!
+    totalStock: Int!
     sku: String
     tags: [String!]
     isActive: Boolean!
     averageRating: Float!
     totalReviews: Int!
     createdAt: String!
+  }
+
+  input SizeStockInput {
+    size: String!
+    stock: Int!
   }
 
   input ProductFilters {
@@ -35,8 +45,7 @@ const productTypeDefs = gql`
     comparePrice: Float
     images: [String!]
     category: ID!
-    sizes: [String!]!
-    stock: Int!
+    sizes: [SizeStockInput!]!
     sku: String
     tags: [String]
   }
@@ -48,8 +57,7 @@ const productTypeDefs = gql`
     comparePrice: Float
     images: [String]
     category: ID
-    sizes: [String]
-    stock: Int
+    sizes: [SizeStockInput!]
     sku: String
     tags: [String]
     isActive: Boolean

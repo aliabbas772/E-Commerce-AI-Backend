@@ -5,7 +5,7 @@ const authTypeDefs = gql`
     _id: ID!
     name: String!
     email: String!
-    phone: String!
+    phone: String
     role: String!
     isVerified: Boolean!
     createdAt: String!

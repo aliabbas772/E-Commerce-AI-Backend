@@ -1,6 +1,8 @@
 import { GraphQLError } from 'graphql'
+import redis from "../../config/redis";
 import { Context } from '../../types/context.types'
 import {
+  askSupportChatService,
   getOutfitRecommendationService,
   getSizeRecommendationService
 } from '../../services/ai.service'
@@ -31,7 +33,12 @@ const aiResolvers = {
     ) => {
       requireAuth(context)
       return getSizeRecommendationService(args, context.user!._id.toString())
-    }
+    },
+
+    askSupportChat: async (_: unknown, args: { query: string }, context: Context) => {
+    requireAuth(context);
+    return askSupportChatService(args.query, context.user!._id.toString());
+},
   }
 }
 
