@@ -1,0 +1,37 @@
+name: Backend CI/CD
+
+on:
+  workflow_call:
+  push:
+    branches: [main]
+    paths: ["server/**"]
+  pull_request:
+    branches: [main]
+    paths: ["server/**"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test --if-present
+
+  deploy:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy — server
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      - name: Trigger Render deploy — worker
+        run: curl -X POST "${{ secrets.RENDER_WORKER_DEPLOY_HOOK_URL }}"

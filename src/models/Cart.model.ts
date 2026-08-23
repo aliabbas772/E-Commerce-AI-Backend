@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 interface ICartItem {
   product: mongoose.Types.ObjectId;
   quantity: number;
-  size: string;
+  size: "XS" | "S" | "M" | "L" | "XL" | "XXL";
   price: number;
 }
 
@@ -38,6 +38,7 @@ const CartSchema = new Schema<ICart>(
         size: {
           type: String,
           required: true,
+          enum: ["XS", "S", "M", "L", "XL", "XXL"],
         },
         price: {
           type: Number,

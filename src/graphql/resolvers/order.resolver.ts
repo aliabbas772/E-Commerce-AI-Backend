@@ -28,6 +28,17 @@ const requireAdmin = (context: Context) => {
 };
 
 const orderResolvers = {
+  Order: {
+    createdAt: (parent: any) => {
+      if (!parent.createdAt) return null;
+
+      if (parent.createdAt instanceof Date) {
+        return parent.createdAt.toISOString();
+      }
+
+      return new Date(parent.createdAt).toISOString();
+    },
+  },
   Query: {
     getMyOrders: (_: unknown, args: any, context: Context) => {
       requireAuth(context);

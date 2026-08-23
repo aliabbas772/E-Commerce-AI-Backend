@@ -39,9 +39,10 @@ const startServer = async (): Promise<void> => {
   if (!DEMO_MODE) {
     await connectElasticsearch();
     await syncAllProductsToES();
-    await connectPubSub();
     await connectKafka();
   }
+
+  await connectPubSub();
 
   logger.info("Skipping es, redis, kafka connection in demo mode");
 

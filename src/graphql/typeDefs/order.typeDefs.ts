@@ -1,6 +1,11 @@
 import { gql } from "graphql-tag";
 
 const orderTypeDefs = gql`
+  type SizeStock {
+    size: String!
+    stock: Int!
+  }
+
   type OrderItem {
     product: Product!
     quantity: Int!
@@ -21,6 +26,7 @@ const orderTypeDefs = gql`
     payment: Payment
     notes: String
     createdAt: String!
+    invoiceUrl: String
   }
 
   type SalesAnalytics {

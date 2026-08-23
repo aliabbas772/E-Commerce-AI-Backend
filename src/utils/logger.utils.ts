@@ -1,7 +1,8 @@
 import pino from "pino";
 import util from "util";
 
-const LOG_DIR = process.env.LOG_FILE_PATH || "/var/log/app";
+// const LOG_DIR = process.env.LOG_FILE_PATH || "/var/log/app";
+const LOG_DIR = process.env.LOG_FILE_PATH;
 const SERVICE_NAME = process.env.SERVICE_NAME || "ecommerce-server";
 
 const targets: pino.TransportTargetOptions[] = [

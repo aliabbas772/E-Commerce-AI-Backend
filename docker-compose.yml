@@ -1,0 +1,291 @@
+services:
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ecommerce_prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - ecommerce_network
+    depends_on:
+      - server
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: ecommerce_alertmanager
+    ports:
+      - '9095:9095'
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    networks:
+      - ecommerce_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ecommerce_grafana
+    ports:
+      - '3001:3000'
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - ecommerce_network
+    depends_on:
+      - prometheus
+
+  mongodb-primary:
+    image: mongo:7
+    container_name: mongo_primary
+    restart: always
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_primary_data:/data/db
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  mongodb-secondary:
+    image: mongo:7
+    container_name: mongo_secondary
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - '27018:27017'
+    volumes:
+      - mongo_secondary_data:/data/db
+    networks:
+      - ecommerce_network
+
+  mongo-init:
+    image: mongo:7
+    container_name: mongo_init
+    depends_on:
+      mongodb-primary:
+        condition: service_healthy
+    networks:
+      - ecommerce_network
+    restart: 'no'
+    entrypoint: [ "bash", "-c" ]
+    command: >
+      "mongosh --host mongodb-primary:27017 --eval '
+        try {
+          if (rs.status().ok) {
+            print(\"Replica set already initialized\");
+          }
+        } catch (e) {
+          rs.initiate({
+            _id: \"rs0\",
+            members: [
+              { _id: 0, host: \"mongodb-primary:27017\" },
+              { _id: 1, host: \"mongodb-secondary:27017\" }
+            ]
+          });
+        }
+      '"
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce_redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  kafka:
+    image: apache/kafka:latest
+    container_name: ecommerce_kafka
+    ports:
+      - '29092:29092' # Used by your local Node.js app
+      - '9092:9092'   # Used by other containers on the network
+      - '9093:9093'   # Internal controller port
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # Define three listeners: Controller, Internal Docker, and External Host
+      KAFKA_LISTENERS: CONTROLLER://:9093,INTERNAL://:9092,EXTERNAL://:29092
+      # Advertise localhost to the host machine, and container name to the Docker network
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      # Map the listener names to security protocols
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    container_name: ecommerce_elasticsearch
+    environment:
+      - discovery.type=single-node
+      # Single node — no cluster needed for development
+      - xpack.security.enabled=false
+      # Disable security for dev — enable in production
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      # Limit memory — ES is greedy, 512MB is fine for dev
+    ports:
+      - '9200:9200'
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9200/_cluster/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s    
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce_server
+    volumes:
+      - server_logs:/var/log/app
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    ports:
+      - '4000:4000'
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo_primary:27017,mongo_secondary:27017/ecommerceai?replicaSet=rs0
+      - REDIS_HOST=ecommerce_redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKER=ecommerce_kafka:9092
+    depends_on:
+      mongodb-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: ecommerce_worker
+    volumes:
+      - worker_logs:/var/log/app
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    env_file:
+      - .env
+    environment:
+      - MONGO_URI=mongodb://mongo_primary:27017,mongo_secondary:27017/ecommerceai?replicaSet=rs0
+      - NODE_ENV=production
+      - KAFKA_BROKER=kafka:9092
+      - REDIS_HOST=ecommerce_redis
+      - REDIS_PORT=6379
+      - SERVICE_NAME=ecommerce-worker
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - ecommerce_network
+
+  kibana:
+    image: kibana:8.13.0
+    container_name: ecommerce_kibana
+    ports:
+      - '5601:5601'
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - ecommerce_network
+
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: ecommerce_loki
+    ports:
+      - '3100:3100'
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - ecommerce_network
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: ecommerce_promtail
+    volumes:
+      - server_logs:/var/log/server:ro
+      - worker_logs:/var/log/worker:ro
+      - ./loki/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - ecommerce_network
+    depends_on:
+      - loki
+
+volumes:
+  mongo_primary_data:
+  mongo_secondary_data:
+  redis_data:
+  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
+  server_logs:
+  worker_logs:
+  loki_data:
+
+networks:
+  ecommerce_network:
+    external: true

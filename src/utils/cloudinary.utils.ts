@@ -18,6 +18,19 @@ export const uploadImage = async (
   return result.secure_url;
 };
 
+export const uploadRawFile = async (
+  base64Data: string,
+  folder: string = "files",
+  fileName: string,
+): Promise<string> => {
+  const result = await cloudinary.uploader.upload(base64Data, {
+    folder: `ecommerceai/${folder}`,
+    resource_type: "raw",
+    public_id: fileName,
+  });
+  return result.secure_url;
+};
+
 export const deleteImage = async (imageUrl: string): Promise<void> => {
   // Extract public_id from Cloudinary URL
   const parts = imageUrl.split("/");

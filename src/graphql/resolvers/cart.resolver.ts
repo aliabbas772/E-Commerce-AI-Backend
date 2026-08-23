@@ -28,11 +28,7 @@ const cartResolvers = {
   Mutation: {
     addToCart: async (
       _: unknown,
-      args: {
-        productId: string;
-        quantity: number;
-        size: string;
-      },
+      args: { productId: string; quantity: number; size: string },
       context: Context,
     ) => {
       requireAuth(context);
@@ -56,7 +52,6 @@ const cartResolvers = {
         args.size,
       );
     },
-
     removeFromCart: async (
       _: unknown,
       args: { productId: string; size: string },
