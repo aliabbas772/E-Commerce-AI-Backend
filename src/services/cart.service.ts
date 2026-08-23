@@ -20,7 +20,7 @@ export const addToCart = async (
     });
   }
 
-  const sizeEntry = product.sizes.find((s: any) => s.size === size) as any;
+  const sizeEntry = product.sizes.find((s: any) => s.size === size);
   if (!sizeEntry) {
     throw new GraphQLError("Invalid size for this product", {
       extensions: { code: "BAD_USER_INPUT" },
@@ -32,7 +32,6 @@ export const addToCart = async (
     cart = new Cart({ user: userId, items: [] });
   }
 
-  // Cast item.product to any to avoid "Property does not exist on type string"
   const existingItem = cart.items.find(
     (item) =>
       (item.product as any).toString() === productId && item.size === size,
@@ -56,9 +55,9 @@ export const addToCart = async (
     existingItem.quantity = newQty;
   } else {
     cart.items.push({
-      product: product._id as any, // Cast to avoid strict schema type errors
+      product: product._id as any,
       quantity,
-      size,
+      size: size as any,
       price: product.price,
     });
   }
@@ -128,6 +127,5 @@ export const removeFromCart = async (
 
 export const clearCart = async (userId: string) => {
   await Cart.findOneAndUpdate({ user: userId }, { items: [], totalAmount: 0 });
-
   return { message: "Cart cleared" };
 };

@@ -4,7 +4,7 @@ interface IOrderItem {
   product: mongoose.Types.ObjectId;
   quantity: number;
   price: number;
-  size: string;
+  size: "XS" | "S" | "M" | "L" | "XL" | "XXL";
 }
 
 export interface IOrder extends Document {
@@ -17,6 +17,7 @@ export interface IOrder extends Document {
   payment?: mongoose.Types.ObjectId; // ← now a reference
   couponCode?: string;
   discount?: number;
+  invoiceUrl?: string;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -38,7 +39,11 @@ const OrderSchema = new Schema<IOrder>(
         },
         quantity: { type: Number, required: true, min: 1 },
         price: { type: Number, required: true },
-        size: { type: String, required: true },
+        size: {
+          type: String,
+          required: true,
+          enum: ["XS", "S", "M", "L", "XL", "XXL"],
+        },
       },
     ],
     totalAmount: {
@@ -68,6 +73,7 @@ const OrderSchema = new Schema<IOrder>(
     couponCode: { type: String },
     discount: { type: Number, default: 0 },
     notes: { type: String },
+    invoiceUrl: { type: String },
   },
   { timestamps: true },
 );

@@ -14,7 +14,7 @@ import {
   publishOrderShipped,
   publishPaymentVerified,
 } from "../kafka/producers/order.producer";
-import { notificationQueue, emailQueue } from "../queues/index";
+import { notificationQueue, emailQueue, invoiceQueue } from "../queues/index";
 import { logger } from "../utils/logger.utils";
 import redis from "../config/redis";
 import { withLock } from "../utils/redisLock.utils";
@@ -160,7 +160,7 @@ export const createOrderService = async (
         product: product._id,
         quantity: item.quantity,
         price: product.price,
-        size: item.size,
+        size: item.size as any,
       });
     }
 
@@ -194,21 +194,26 @@ export const createOrderService = async (
 
     await Order.findByIdAndUpdate(order._id, { payment: order._id });
 
-    await publishOrderCreated({
-      orderId: order._id.toString(),
-      userId,
-      email: userEmail,
-      name: userName,
-      totalAmount,
-    });
+    if (!process.env.DEMO_MODE) {
+      console.log("demo");
+      await publishOrderCreated({
+        orderId: order._id.toString(),
+        userId,
+        email: userEmail,
+        name: userName,
+        totalAmount,
+      });
+    }
 
-    await notificationQueue.add("order_placed", {
-      userId,
-      type: "order_placed",
-      title: "Order Placed!",
-      message: `Your order of ₹${totalAmount} has been placed successfully.`,
-      link: `/orders/${order._id}`,
-    });
+    if (!process.env.DEMO_MODE) {
+      await notificationQueue.add("order_placed", {
+        userId,
+        type: "order_placed",
+        title: "Order Placed!",
+        message: `Your order of ₹${totalAmount} has been placed successfully.`,
+        link: `/orders/${order._id}`,
+      });
+    }
 
     return {
       razorpayOrderId: razorpayOrder.id,
@@ -295,23 +300,30 @@ export const verifyPaymentService = async (args: {
 
   const user = order.user as any;
 
-  await publishPaymentVerified({
-    orderId: order._id.toString(),
-    email: user.email,
-    name: user.name,
-    totalAmount: order.totalAmount,
-  });
+  if (!process.env.DEMO_MODE) {
+    await publishPaymentVerified({
+      orderId: order._id.toString(),
+      email: user.email,
+      name: user.name,
+      totalAmount: order.totalAmount,
+    });
 
-  await notificationQueue.add("payment_success", {
-    userId: user._id.toString(),
-    type: "payment_success",
-    title: "Payment Successful!",
-    message: `Payment of ₹${order.totalAmount} received. Your order is being processed.`,
-    link: `/orders/${order._id}`,
-  });
+    await notificationQueue.add("payment_success", {
+      userId: user._id.toString(),
+      type: "payment_success",
+      title: "Payment Successful!",
+      message: `Payment of ₹${order.totalAmount} received. Your order is being processed.`,
+      link: `/orders/${order._id}`,
+    });
+  }
 
   paymentVerifiedTotal.inc({ status: "success" });
 
+  if (!process.env.DEMO_MODE) {
+    await invoiceQueue.add("generate_invoice", {
+      orderId: order._id.toString(),
+    });
+  }
   return { message: "Payment verified successfully" };
 };
 
@@ -411,9 +423,10 @@ export const cancelOrderService = async (
   }
 
   for (const item of order.items) {
-    await Product.findByIdAndUpdate(item.product, {
-      $inc: { stock: item.quantity },
-    });
+    await Product.updateOne(
+      { _id: item.product, "sizes.size": item.size },
+      { $inc: { "sizes.$.stock": item.quantity } },
+    );
   }
 
   await Order.findByIdAndUpdate(id, {

@@ -1,19 +1,24 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+// 1. Define the subdocument interface for better type safety
+interface ISizeVariant {
+  size: "XS" | "S" | "M" | "L" | "XL" | "XXL";
+  stock: number;
+}
+
 export interface IProduct extends Document {
   name: string;
   description: string;
   price: number;
-  comparePrice?: number; // original price for showing discount
+  comparePrice?: number;
   images: string[];
-  category: mongoose.Types.ObjectId; // ← now reference
-  sizes: string[];
-  stock: number;
-  sku?: string; // stock keeping unit — unique product code
-  tags?: string[]; // for search
+  category: mongoose.Types.ObjectId;
+  sizes: ISizeVariant[]; // 2. Updated from string[] to the correct object array type
+  sku?: string;
+  tags?: string[];
   isActive: boolean;
-  averageRating: number; // denormalized for performance
-  totalReviews: number; // denormalized for performance
+  averageRating: number;
+  totalReviews: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,7 +59,7 @@ const ProductSchema = new Schema<IProduct>(
             type: String,
             required: true,
             enum: ["XS", "S", "M", "L", "XL", "XXL"],
-            default: [],
+            // Removed default: [] from here
           },
           stock: { type: Number, required: true, min: 0, default: 0 },
         },
@@ -63,8 +68,6 @@ const ProductSchema = new Schema<IProduct>(
       validate: [(arr: any[]) => arr.length > 0, "At least one size required"],
     },
     sku: {
-      // Why SKU: unique identifier per product variant
-      // Used in warehouse, inventory systems
       type: String,
       unique: true,
       sparse: true,
@@ -72,21 +75,16 @@ const ProductSchema = new Schema<IProduct>(
     tags: {
       type: [String],
       default: [],
-      // Why tags: "cotton", "summer", "casual" — improves search
     },
     isActive: {
       type: Boolean,
       default: true,
-      // Why: soft delete — deactivate instead of delete
-      // Deleting breaks order history that references this product
     },
     averageRating: {
       type: Number,
       default: 0,
       min: 0,
       max: 5,
-      // Why denormalized: calculating average on every product list
-      // query across thousands of reviews = slow. Store it here, update on review
     },
     totalReviews: {
       type: Number,

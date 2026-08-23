@@ -92,7 +92,7 @@ export const updateCategory = async (
     input,
     { new: true, runValidators: true },
   ).populate("parentCategory");
-  console.log(category);
+  // console.log(category);
 
   if (!category) {
     throw new GraphQLError("Category not found", {

@@ -92,3 +92,28 @@ export const sendOTPEmail = async (
     `,
   });
 };
+
+export const sendInvoiceEmail = async (
+  email: string,
+  name: string,
+  orderId: string,
+  pdfBuffer: Buffer,
+): Promise<void> => {
+  await transporter.sendMail({
+    from: `"EcommerceAI" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: "Your Invoice 🧾",
+    html: `
+      <h2>Hi ${name}, here's your invoice</h2>
+      <p>Order ID: <strong>${orderId}</strong></p>
+      <p>Your invoice is attached as a PDF.</p>
+    `,
+    attachments: [
+      {
+        filename: `invoice-${orderId.slice(-8)}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf",
+      },
+    ],
+  });
+};

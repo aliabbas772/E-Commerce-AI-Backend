@@ -8,6 +8,7 @@
     "outDir": "dist",
     "esModuleInterop": true,
     "strict": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true, 
+  },
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "src/tests/**/*"],
 }

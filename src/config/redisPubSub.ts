@@ -1,68 +1,34 @@
-// import Redis from "ioredis";
-// import { logger } from "../utils/logger.utils";
-
-// // Why separate connections:
-// // Subscriber connection enters "subscribe mode" — it can ONLY subscribe/receive
-// // It cannot run regular Redis commands while subscribed
-// // So we need a separate publisher connection for regular commands
-// const DEMO_MODE = process.env.DEMO_MODE === "true";
-// console.log("DEMO_MODE in redisPubSub:", process.env.DEMO_MODE);
-
-// export const publisher = DEMO_MODE
-//   ? null
-//   : new Redis({
-//       host: process.env.REDIS_HOST || "localhost",
-//       port: Number(process.env.REDIS_PORT) || 6379,
-//       lazyConnect: true,
-//     });
-
-// export const subscriber = DEMO_MODE
-//   ? null
-//   : new Redis({
-//       host: process.env.REDIS_HOST || "localhost",
-//       port: Number(process.env.REDIS_PORT) || 6379,
-//       lazyConnect: true,
-//     });
-
-// export const connectPubSub = async (): Promise<void> => {
-//   if (DEMO_MODE) {
-//     logger.info("Skipping Redis Pub/Sub in demo mode");
-//     return;
-//   }
-
-//   if (!publisher || !subscriber) return;
-
-//   await publisher.connect();
-//   await subscriber.connect();
-//   logger.info("✅ Redis Pub/Sub connected");
-// };
-
 import Redis from "ioredis";
 import { logger } from "../utils/logger.utils";
 
 export let publisher: Redis | null = null;
 export let subscriber: Redis | null = null;
 
+const DEMO_MODE = process.env.DEMO_MODE === "true";
+
 export const connectPubSub = async (): Promise<void> => {
-  if (process.env.DEMO_MODE === "true") {
-    logger.info("Skipping Redis Pub/Sub");
-    return;
-  }
+  const connectionOptions = DEMO_MODE
+    ? { tls: {}, lazyConnect: true }
+    : {
+        host: process.env.REDIS_HOST || "localhost",
+        port: Number(process.env.REDIS_PORT) || 6379,
+        lazyConnect: true,
+      };
 
-  publisher = new Redis({
-    host: process.env.REDIS_HOST || "localhost",
-    port: Number(process.env.REDIS_PORT) || 6379,
-    lazyConnect: true,
-  });
+  publisher = DEMO_MODE
+    ? new Redis(process.env.UPSTASH_REDIS_TCP_URL!, connectionOptions)
+    : new Redis(connectionOptions as any);
 
-  subscriber = new Redis({
-    host: process.env.REDIS_HOST || "localhost",
-    port: Number(process.env.REDIS_PORT) || 6379,
-    lazyConnect: true,
-  });
+  subscriber = DEMO_MODE
+    ? new Redis(process.env.UPSTASH_REDIS_TCP_URL!, connectionOptions)
+    : new Redis(connectionOptions as any);
 
   await publisher.connect();
   await subscriber.connect();
 
-  logger.info("✅ Redis Pub/Sub connected");
+  logger.info(
+    DEMO_MODE
+      ? "✅ Upstash Redis Pub/Sub connected"
+      : "✅ Redis Pub/Sub connected",
+  );
 };
