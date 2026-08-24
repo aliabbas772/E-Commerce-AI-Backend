@@ -1,10 +1,10 @@
 # EcommerceAI Backend
 
-A production grade ecommerce backend built with the MERN stack, GraphQL, and AI powered product recommendations using Gemini AI.
+A production grade ecommerce backend built with the MERN stack, GraphQL, and AI powered product recommendations and Chat Support using Gemini AI.
 
 ## Overview
 
-This backend powers a full ecommerce platform, covering authentication, catalog management, cart and checkout, payments, search, real time order updates, and background job processing. It was built as a portfolio project to demonstrate backend architecture and system design at a production standard.
+This backend powers a full ecommerce platform, covering authentication, catalog management, cart and checkout, payments, search, real time order updates, and background job processing.
 
 ## Tech Stack
 
@@ -66,11 +66,11 @@ npm run dev
 | `GEMINI_API_KEY`                          | Google Gemini AI API key                        |
 | `JWT_SECRET`                              | Secret for signing auth tokens                  |
 | `DEMO_MODE`                               | Set to `true` to disable Kafka, Elastic search, |
-|                                           | Redis, prometheus, grafana locally              |
+|                                           | prometheus, grafana locally                     |
+
 ## check .env.example for more env variables...
 
 ## API Access
 
 GraphQL Playground: `localhost:port/graphql`
 REST health check: `localhost:port/health`
-
